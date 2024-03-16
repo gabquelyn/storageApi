@@ -1,10 +1,11 @@
 import { Response, Request } from "express";
 import expressAsyncHandler from "express-async-handler";
 import Token from "../model/token";
-import User from "../model/User";
+import User from "../model/user";
 import sendMail from "../utils/sendMail";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs"
 
 export const loginController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
