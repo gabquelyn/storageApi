@@ -1,0 +1,7 @@
+services:
+  - name: storageApi
+    type: web
+    startCommand: npm start
+    env:
+      - key: NODE_ENV
+        value: development

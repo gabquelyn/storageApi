@@ -15,7 +15,7 @@ export const loginController = expressAsyncHandler(
     if (!foundUser)
       return res.status(400).json({ message: "User does not exist" });
 
-    const passwordMatch = await bcrypt.compare(password, foundUser.password);
+    const passwordMatch = bcrypt.compareSync(password, foundUser.password);
     if (!passwordMatch)
       return res.status(401).json({ message: "Unauthorized" });
 
@@ -76,8 +76,7 @@ export const registerController = expressAsyncHandler(
     const existing = await User.findOne({ email }).lean().exec();
     if (existing)
       return res.status(409).json({ message: "Email already in use" });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
     const newUser = await User.create({
       email,
       password: hashedPassword,
