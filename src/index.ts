@@ -8,11 +8,11 @@ import mongoose from "mongoose";
 import path from "path"
 import authRouter from "./routes/authRoutes";
 
+dotenv.config();
+connectDB();
+
 const app: Express = express();
 const port = process.env.PORT || 8080;
-
-connectDB();
-dotenv.config();
 app.use(logger);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
