@@ -3,14 +3,11 @@ import logger, { logEvents } from "./middlewares/logger";
 import cookierParser from "cookie-parser";
 import errorHandler from "./middlewares/errorHandler";
 import dotenv from "dotenv";
-import connectDB from "./utils/connectDB";
-import mongoose from "mongoose";
-import path from "path"
+import path from "path";
 import authRouter from "./routes/authRoutes";
+import sequelize from "./utils/database";
 
 dotenv.config();
-connectDB();
-
 const app: Express = express();
 const port = process.env.PORT || 8080;
 app.use(logger);
@@ -23,22 +20,22 @@ app.use((req: Request, res: Response) => {
   return res.status(200).json({ message: "Welcome to server" });
 });
 
-app.use('/auth', authRouter)
-
+app.use("/auth", authRouter);
 
 app.use(errorHandler);
-mongoose.connection.on("open", () => {
-  console.log("Connected to DB");
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+
+sequelize
+  .sync()
+  .then((res) => {
+    // console.log(res);
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+    logEvents(
+      `${err.no}: ${err.code}\t${err.syscall}\t${err.hostname}`,
+      "mySqlLog.log"
+    );
   });
-});
-
-mongoose.connection.on("error", (err) => {
-  console.log(err);
-  logEvents(
-    `${err.no}: ${err.code}\t${err.syscall}\t${err.hostname}`,
-    "mongoErr.log"
-  );
-});
-

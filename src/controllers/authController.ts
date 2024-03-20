@@ -5,12 +5,13 @@ import User from "../model/user";
 import sendMail from "../utils/sendMail";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs"
+import bcrypt from "bcryptjs";
+import { differenceInMinutes } from "date-fns";
 
 export const loginController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { email, password } = req.body;
-    const foundUser = await User.findOne({ email }).lean().exec();
+    const foundUser = await User.findOne({ where: { email } });
 
     if (!foundUser)
       return res.status(400).json({ message: "User does not exist" });
@@ -21,19 +22,18 @@ export const loginController = expressAsyncHandler(
 
     if (!foundUser.verified) {
       const existingToken = await Token.findOne({
-        userId: foundUser._id,
-      }).exec();
+        where: { userId: foundUser.id },
+      });
+      await existingToken?.destroy();
 
-      if (!existingToken) {
-        const verificationToken = await Token.create({
-          userId: foundUser._id,
-          token: crypto.randomBytes(32).toString("hex"),
-        });
+      const verificationToken = await Token.create({
+        userId: foundUser.id!,
+        token: crypto.randomBytes(32).toString("hex"),
+      });
 
-        const url = `${process.env.BASE_URL}/auth/${foundUser._id}/verify/${verificationToken.token}`;
+      const url = `${process.env.BASE_URL}/auth/${foundUser.id}/verify/${verificationToken.token}`;
 
-        await sendMail(foundUser.email, "Verify email", url);
-      }
+      await sendMail(foundUser.email, "Verify email", url);
 
       return res
         .status(400)
@@ -44,7 +44,7 @@ export const loginController = expressAsyncHandler(
       {
         UserInfo: {
           email: foundUser.email,
-          userId: foundUser._id,
+          userId: foundUser.id,
         },
       },
       String(process.env.ACCESS_TOKEN_SECRET),
@@ -73,7 +73,7 @@ export const registerController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { email, password } = req.body;
 
-    const existing = await User.findOne({ email }).lean().exec();
+    const existing = await User.findOne({ where: { email } });
     if (existing)
       return res.status(409).json({ message: "Email already in use" });
     const hashedPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
@@ -87,11 +87,13 @@ export const registerController = expressAsyncHandler(
 
     // verification token
     const verificationToken = await Token.create({
-      userId: newUser._id,
+      userId: newUser.id!,
       token: crypto.randomBytes(32).toString("hex"),
     });
 
-    const url = `${process.env.FRONTEND_URL}/auth/${newUser._id}/verify/${verificationToken.token}`;
+    const url = `${process.env.FRONTEND_URL}/auth/${newUser.id!}/verify/${
+      verificationToken.token
+    }`;
     // send the verification url via email
     await sendMail(newUser.email, "Verify email", url);
     res
@@ -116,17 +118,20 @@ export const logoutController = expressAsyncHandler(
 export const verifyController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { userId, token } = req.params;
-    const user = await User.findById(userId).exec();
+    const user = await User.findByPk(userId);
     if (!user) return res.status(400).send({ message: "Invalid link" });
     const existingToken = await Token.findOne({
-      userId: user._id,
-      token,
+      where: {
+        userId,
+        token,
+      },
     });
+
     if (!existingToken)
       return res.status(400).send({ message: "invalid link" });
     user.verified = true;
     await user.save();
-    await existingToken.deleteOne();
+    await existingToken.destroy();
     res.status(200).send({ message: "Email verified successfully!" });
   }
 );
@@ -134,14 +139,14 @@ export const verifyController = expressAsyncHandler(
 export const forgotPasswordController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
     if (!user) return res.status(404).json({ message: "User not found!" });
-    const existingToken = await Token.findOne({ userId: user._id }).exec();
-    await existingToken?.deleteOne();
+    const existingToken = await Token.findOne({ where: { userId: user.id } });
+    await existingToken?.destroy();
 
     const otp = await Token.create({
       token: crypto.randomBytes(32).toString("hex"),
-      userId: user._id,
+      userId: user.id!,
     });
 
     const url = `${process.env.FRONTEND_URL}/auth/reset/${otp.token}`;
@@ -158,16 +163,29 @@ export const restPasswordController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { token } = req.params;
     const { password } = req.body;
-    const existingToken = await Token.findOne({ token }).exec();
+    const existingToken = await Token.findOne({ where: { token } });
     if (!existingToken)
       return res.status(400).send({ message: "invalid link" });
-    const user = await User.findById(existingToken.userId).exec();
-    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // before reset check how long token has stayed
+    const tokenExpiry: number =
+      Number(process.env.TOKEN_EXPIRY_IN_MINUTES) || 10;
+    if (
+      differenceInMinutes(new Date(), existingToken.createdAt!) > tokenExpiry
+    ) {
+      existingToken.destroy();
+      return res.status(405).json({ message: "Token already expired" });
+    }
+    
+    const user = await User.findByPk(existingToken.userId);
+
     if (user) {
+      const hashedPassword = await bcrypt.hash(password, 10);
       user.password = hashedPassword;
       await user.save();
     }
-    await existingToken.deleteOne();
+
+    await existingToken.destroy();
     return res.status(200).json({ message: "password updated successfully!" });
   }
 );

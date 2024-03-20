@@ -1,21 +1,24 @@
-import { Schema, model } from "mongoose";
-const tokenSchema = new Schema({
+import sequelize from "../utils/database";
+import { DataTypes, Model } from "sequelize";
+import { TokenAttributes } from "../../types";
+
+interface TokenInstance extends Model<TokenAttributes>, TokenAttributes {}
+const token = sequelize.define<TokenInstance>("Token", {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+    allowNull: false,
+  },
   userId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    ref: "User",
+    type: DataTypes.INTEGER,
     unique: true,
+    allowNull: false,
   },
   token: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
+    type: DataTypes.STRING,
+    allowNull: false,
   },
 });
 
-tokenSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3600 });
-
-export default model("Token", tokenSchema);
+export default token;
