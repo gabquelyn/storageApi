@@ -77,9 +77,11 @@ export const registerController = expressAsyncHandler(
     if (existing)
       return res.status(409).json({ message: "Email already in use" });
     const hashedPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+    
     const newUser = await User.create({
       email,
       password: hashedPassword,
+      verified: false,
     });
 
     if (!newUser)
@@ -176,7 +178,7 @@ export const restPasswordController = expressAsyncHandler(
       existingToken.destroy();
       return res.status(405).json({ message: "Token already expired" });
     }
-    
+
     const user = await User.findByPk(existingToken.userId);
 
     if (user) {
