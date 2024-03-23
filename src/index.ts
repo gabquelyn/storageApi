@@ -18,11 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/", express.static(path.join(__dirname, "public")));
 app.use(cookierParser());
-app.use("/", (req: Request, res: Response) => {
-  return res.status(200).json({ message: "Welcome to server" });
-});
 app.use("/auth", authRouter);
-
 app.use(errorHandler);
 
 sequelize
