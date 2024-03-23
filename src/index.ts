@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import path from "path";
 import authRouter from "./routes/authRoutes";
 import sequelize from "./utils/database";
-import cors from "cors"
+import cors from "cors";
 import corsOptions from "./utils/corsOptions";
 
 dotenv.config();
@@ -18,11 +18,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/", express.static(path.join(__dirname, "public")));
 app.use(cookierParser());
-
-app.use("/auth", authRouter);
 app.use("/", (req: Request, res: Response) => {
   return res.status(200).json({ message: "Welcome to server" });
 });
+app.use("/auth", authRouter);
 
 app.use(errorHandler);
 
