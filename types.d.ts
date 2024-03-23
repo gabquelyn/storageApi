@@ -1,12 +1,11 @@
 import { Request } from "express";
 interface CustomRequest extends Request {
   email: string;
-  id: string;
+  userId: string;
 }
 interface UserAttributes {
   id?: number;
-  firstname?: string;
-  lastname?: string;
+  name: string;
   email: string;
   password: string;
   country?: string;

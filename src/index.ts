@@ -6,11 +6,14 @@ import dotenv from "dotenv";
 import path from "path";
 import authRouter from "./routes/authRoutes";
 import sequelize from "./utils/database";
+import cors from "cors"
+import corsOptions from "./utils/corsOptions";
 
 dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 8080;
 app.use(logger);
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/", express.static(path.join(__dirname, "public")));

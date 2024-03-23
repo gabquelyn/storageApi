@@ -11,13 +11,9 @@ const User = sequelize.define<UserInstance>("User", {
     autoIncrement: true,
     allowNull: false,
   },
-  firstname: {
+  name: {
     type: DataTypes.STRING,
-    allowNull: true,
-  },
-  lastname: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   email: {
     type: DataTypes.STRING,

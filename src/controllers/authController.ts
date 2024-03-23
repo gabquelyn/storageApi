@@ -14,7 +14,7 @@ export const loginController = expressAsyncHandler(
     const foundUser = await User.findOne({ where: { email } });
 
     if (!foundUser)
-      return res.status(400).json({ message: "User does not exist" });
+      return res.status(404).json({ message: "User does not exist" });
 
     const passwordMatch = bcrypt.compareSync(password, foundUser.password);
     if (!passwordMatch)
@@ -31,7 +31,7 @@ export const loginController = expressAsyncHandler(
         token: crypto.randomBytes(32).toString("hex"),
       });
 
-      const url = `${process.env.BASE_URL}/auth/${foundUser.id}/verify/${verificationToken.token}`;
+      const url = `${process.env.FRONTEND_URL}/auth/${foundUser.id}/verify/${verificationToken.token}`;
 
       await sendMail(foundUser.email, "Verify email", url);
 
@@ -71,15 +71,16 @@ export const loginController = expressAsyncHandler(
 
 export const registerController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
 
     const existing = await User.findOne({ where: { email } });
     if (existing)
       return res.status(409).json({ message: "Email already in use" });
     const hashedPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-    
+
     const newUser = await User.create({
       email,
+      name,
       password: hashedPassword,
       verified: false,
     });
@@ -141,7 +142,8 @@ export const verifyController = expressAsyncHandler(
 export const forgotPasswordController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
+    console.log(email)
+     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(404).json({ message: "User not found!" });
     const existingToken = await Token.findOne({ where: { userId: user.id } });
     await existingToken?.destroy();
@@ -151,7 +153,7 @@ export const forgotPasswordController = expressAsyncHandler(
       userId: user.id!,
     });
 
-    const url = `${process.env.FRONTEND_URL}/auth/reset/${otp.token}`;
+    const url = `${process.env.FRONTEND_URLL}/auth/reset/${otp.token}`;
 
     // send the verification url via email
     await sendMail(user.email, "Reset Password", url);
@@ -189,5 +191,38 @@ export const restPasswordController = expressAsyncHandler(
 
     await existingToken.destroy();
     return res.status(200).json({ message: "password updated successfully!" });
+  }
+);
+
+export const refreshController = expressAsyncHandler(
+  async (req: Request, res: Response): Promise<any> => {
+    const cookies = req.cookies;
+    if (!cookies?.jwt) return res.status(403).json({ message: "Unauthorized" });
+    const refreshToken = cookies.jwt;
+    // verify the refresh token
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET as string,
+      async (error: any, decoded: any) => {
+        if (error) return res.status(403).json({ message: "Forbidden" });
+        const foundUser = await User.findOne({
+          where: { email: decoded?.email },
+        });
+        if (!foundUser)
+          return res.status(400).json({ message: "Unauthorized" });
+        // create the access token
+        const accessToken = jwt.sign(
+          {
+            UserInfo: {
+              email: foundUser.email,
+              userId: foundUser.id,
+            },
+          },
+          process.env.ACCESS_TOKEN_SECRET as string,
+          { expiresIn: "1h" }
+        );
+        return res.json({ accessToken });
+      }
+    );
   }
 );
