@@ -1,11 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-// import { CustomRequest } from "../../types";
+import { CustomRequest } from "../../types";
 import jwt from "jsonwebtoken";
 
-interface CustomRequest extends Request {
-  email: string;
-  userId: string;
-}
+
 export default function verifyJwt(
   req: Request,
   res: Response,

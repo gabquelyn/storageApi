@@ -1,7 +1,7 @@
 import { Request } from "express";
 interface CustomRequest extends Request {
   email: string;
-  userId: string;
+  userId: number;
 }
 interface UserAttributes {
   id?: number;
@@ -9,7 +9,7 @@ interface UserAttributes {
   email: string;
   password: string;
   country?: string;
-  verified?: boolean
+  verified?: boolean;
 }
 
 interface TokenAttributes {
@@ -17,4 +17,19 @@ interface TokenAttributes {
   userId: number;
   token: string;
   createdAt?: Date;
+}
+interface FileMetaDataAttribute {
+  id?: number;
+  userId: number;
+  key: string;
+  size: number;
+  folder?: number;
+  mimetype: string;
+  originalname: string;
+}
+
+interface FolderMetaDataAttribute {
+  id?: number;
+  userId: number;
+  foldername: string;
 }
