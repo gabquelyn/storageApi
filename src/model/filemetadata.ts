@@ -27,9 +27,9 @@ const FileMetaData = sequelize.define<FileMetaDataInstance>("File", {
     type: DataTypes.INTEGER,
     allowNull: false
   },
-  folder: {
+  folderId: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    defaultValue: -1
   },
   mimetype: {
     type: DataTypes.STRING,

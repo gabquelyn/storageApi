@@ -23,7 +23,7 @@ interface FileMetaDataAttribute {
   userId: number;
   key: string;
   size: number;
-  folder?: number;
+  folderId?: number;
   mimetype: string;
   originalname: string;
 }
