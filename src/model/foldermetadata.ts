@@ -4,7 +4,7 @@ import { FolderMetaDataAttribute } from "../../types";
 interface FolderMetaDataInstance
   extends Model<FolderMetaDataAttribute>,
     FolderMetaDataAttribute {}
-const FolderMetaData = sequelize.define<FolderMetaDataInstance>("File", {
+const FolderMetaData = sequelize.define<FolderMetaDataInstance>("Foldermetadata", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -13,13 +13,18 @@ const FolderMetaData = sequelize.define<FolderMetaDataInstance>("File", {
   },
   userId: {
     type: DataTypes.INTEGER,
-    unique: true,
     allowNull: false,
+  },
+  totalSize: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
   },
   foldername: {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  
 });
 
 export default FolderMetaData;

@@ -1,11 +1,11 @@
 import expressAsyncHandler from "express-async-handler";
-import { Op, where } from "sequelize";
 import { Request, Response, NextFunction } from "express";
 import { CustomRequest } from "../../types";
 import { v4 as uuid } from "uuid";
 import FolderMetaData from "../model/foldermetadata";
 import FileMetaData from "../model/filemetadata";
-import Minio from "minio";
+import * as Minio from "minio";
+import sequelize from "../utils/database";
 
 const minioClient = new Minio.Client({
   endPoint: process.env.MINIO_ENDPOINT!,
@@ -15,43 +15,95 @@ const minioClient = new Minio.Client({
   secretKey: process.env.MINIO_SECRET_KEY!,
 });
 
+minioClient.bucketExists(process.env.BUCKET_NAME!, function (err, exists) {
+  if (!exists) {
+    console.log("Creating bucket...");
+    minioClient.makeBucket(
+      process.env.BUCKET_NAME!,
+      "us-east-1",
+      function (err) {
+        if (err) return console.log("Error creating bucket.", err);
+        console.log('Bucket created successfully in "us-east-1".');
+      }
+    );
+  }
+});
 
 export const postFilesHandler = expressAsyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     const files = req.files;
+    const { folderId } = req.body;
     const userId = (req as CustomRequest).userId;
 
+    const folderExist = await FolderMetaData.findByPk(folderId);
     if ((files?.length as number) < 0)
       return res
         .status(400)
         .json({ message: "No file submitted for uploading" });
 
-    for (const file of files as Express.Multer.File[]) {
-      const originalname = file.originalname;
-      const key = uuid() + originalname;
-      const metaData = {
-        "Content-Type": file.mimetype,
-        "X-Amz-Meta-UserId": userId,
-      };
-      minioClient.putObject(
-        process.env.BUCKET_NAME!,
-        key,
-        file.buffer,
-        file.buffer.length,
-        metaData,
-        async (err, data) => {
-          if (err) return console.log(err);
-          const newMetaData = await FileMetaData.create({
+    try {
+      let totalFileSize: number = 0;
+      const uploadPromises = (files as Express.Multer.File[]).map(
+        async (file) => {
+          const originalname = file.originalname;
+          const key = uuid() + originalname;
+          const metaData = {
+            "Content-Type": file.mimetype,
+            "X-Amz-Meta-UserId": userId,
+          };
+
+          // Create a promise to wrap the call to minioClient.putObject
+          const putObjectPromise = new Promise<void>((resolve, reject) => {
+            minioClient.putObject(
+              process.env.BUCKET_NAME!,
+              key,
+              file.buffer,
+              file.size, // Length parameter (optional)
+              metaData,
+              (err, data) => {
+                if (err) {
+                  console.error(`Error uploading file ${originalname}:`, err);
+                  reject(err);
+                } else {
+                  console.log(`File uploaded ${data}`);
+                  resolve();
+                }
+              }
+            );
+          });
+
+          // Wait for the putObject operation to complete
+          await putObjectPromise;
+
+          totalFileSize += file.size;
+
+          // Create file metadata
+          await FileMetaData.create({
             userId,
             size: file.size,
             key,
             originalname,
+            folderId: folderExist && folderExist.userId ? folderId : -1,
             mimetype: file.mimetype,
           });
-          console.log(`File uploaded ${data}`, newMetaData);
+
+          console.log(`File uploaded: ${key}`);
         }
       );
+
+      // Wait for all uploads and metadata creations to complete
+      await Promise.all(uploadPromises);
+
+      // Update folder totalSize
+      if (folderExist && folderExist.userId === userId) {
+        folderExist.totalSize += totalFileSize;
+        console.log(totalFileSize);
+        await folderExist.save();
+      }
+    } catch (err) {
+      console.log(err);
     }
+
     return res.status(200).json({ message: "Files uploaded" });
   }
 );
@@ -64,11 +116,17 @@ export const getFilesHandler = expressAsyncHandler(
       process.env.BUCKET_NAME!,
       filename
     );
-    if (stat.metaData?.["X-Amz-Meta-UserId"] !== userId)
+    console.log(stat);
+    if (stat.metaData?.["userid"] != userId)
       return res.status(403).json({ message: "Access to file denied" });
 
     minioClient.getObject(process.env.BUCKET_NAME!, filename, (err, stream) => {
       if (err) return res.status(400).json({ message: "Error receiving file" });
+      res.setHeader("Content-disposition", `inline; filename=${filename}`);
+      res.setHeader(
+        "Content-type",
+        stat.metaData?.["content-type"] || "application/octet-stream"
+      );
       stream.pipe(res);
     });
   }
@@ -86,8 +144,9 @@ export const moveFileHandler = expressAsyncHandler(
     if (folderMetaData.id !== userId || fileMetaData.id !== userId)
       return res.status(403).json({ message: "Access denied" });
     fileMetaData.folderId = folderMetaData.id;
+    folderMetaData.totalSize += fileMetaData.size;
     await fileMetaData.save();
-
+    await folderMetaData.save();
     return res.status(200);
   }
 );
@@ -97,11 +156,34 @@ export const deleteFileHandler = expressAsyncHandler(
     const { fileId } = req.params;
     const fileMetaData = await FileMetaData.findByPk(fileId);
     if (!fileMetaData) return res.status(404);
+    if (fileMetaData.folderId != -1) {
+      const existInfolder = await FolderMetaData.findByPk(
+        fileMetaData.folderId
+      );
+      if (existInfolder) {
+        existInfolder.totalSize -= fileMetaData.size;
+        await existInfolder.save();
+      }
+    }
+    if (!fileMetaData) return res.status(404);
 
+    await fileMetaData.destroy();
     await minioClient.removeObject(process.env.BUCKET_NAME!, fileMetaData.key);
     res
       .status(200)
       .json({ message: `Deleted file ${fileMetaData.originalname}` });
+  }
+);
+
+export const deleteFolder = expressAsyncHandler(
+  async (req: Request, res: Response): Promise<any> => {
+    const { folderId } = req.params;
+    const containFiles = await FileMetaData.findOne({ where: { folderId } });
+    if (containFiles)
+      return res.status(400).json({ message: "Folder contanis files" });
+    const folderMetaData = await FolderMetaData.findByPk(folderId);
+    await folderMetaData?.destroy();
+    return res.status(200).json({ message: "deleted folder" });
   }
 );
 
@@ -121,12 +203,16 @@ export const renameFileHandler = expressAsyncHandler(
 export const getFoldersAndFilesHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const userId = (req as CustomRequest).userId;
-    const folders = await FolderMetaData.findAll({ where: { userId } });
+    const folders = await FolderMetaData.findAll({
+      where: { userId },
+      order: [[sequelize.literal("foldername"), "ASC"]],
+    });
     const files = await FileMetaData.findAll({
       where: {
         userId,
         folderId: -1,
       },
+      order: [[sequelize.literal("originalname"), "ASC"]],
     });
 
     return res.status(200).json({ folders, files });
@@ -136,8 +222,32 @@ export const getFoldersAndFilesHandler = expressAsyncHandler(
 export const getFolderFilesHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { folderId } = req.params;
+    const existingFolder = await FolderMetaData.findByPk(folderId);
+    if (!existingFolder) return res.status(404);
     const userId = (req as CustomRequest).userId;
     const files = await FileMetaData.findAll({ where: { userId, folderId } });
-    return res.status(200).json([...files]);
+    return res
+      .status(200)
+      .json({ files: [...files], foldername: existingFolder.foldername });
+  }
+);
+
+export const createFolderHandler = expressAsyncHandler(
+  async (req: Request, res: Response): Promise<any> => {
+    const { foldername } = req.body;
+    const userId = (req as CustomRequest).userId;
+
+    const isExisting = await FolderMetaData.findOne({
+      where: { foldername, userId },
+    });
+    if (isExisting)
+      return res.status(400).json({ message: "Folder already exists" });
+    await FolderMetaData.create({
+      foldername,
+      userId: (req as CustomRequest).userId,
+      totalSize: 0,
+    });
+
+    return res.status(201).json({ message: "Folder created successfully!" });
   }
 );

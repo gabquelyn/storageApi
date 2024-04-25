@@ -32,4 +32,5 @@ interface FolderMetaDataAttribute {
   id?: number;
   userId: number;
   foldername: string;
+  totalSize: number;
 }

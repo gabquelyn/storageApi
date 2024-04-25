@@ -4,7 +4,7 @@ import { FileMetaDataAttribute } from "../../types";
 interface FileMetaDataInstance
   extends Model<FileMetaDataAttribute>,
     FileMetaDataAttribute {}
-const FileMetaData = sequelize.define<FileMetaDataInstance>("File", {
+const FileMetaData = sequelize.define<FileMetaDataInstance>("Filemetadata", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -24,7 +24,7 @@ const FileMetaData = sequelize.define<FileMetaDataInstance>("File", {
     allowNull: false,
   },
   originalname: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: false
   },
   folderId: {
