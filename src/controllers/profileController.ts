@@ -22,5 +22,6 @@ export const updateProfileHandler = expressAsyncHandler(
     foundUser.address = address;
     foundUser.country = country;
     await foundUser.save();
+    return res.status(201).json({ message: "Updated status successfully" });
   }
 );
