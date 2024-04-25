@@ -11,65 +11,61 @@ import { differenceInMinutes } from "date-fns";
 export const loginController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { email, password } = req.body;
-    try {
-      const foundUser = await User.findOne({ where: { email } });
+    const foundUser = await User.findOne({ where: { email } });
 
-      if (!foundUser)
-        return res.status(404).json({ message: "User does not exist" });
+    if (!foundUser)
+      return res.status(404).json({ message: "User does not exist" });
 
-      const passwordMatch = bcrypt.compareSync(password, foundUser.password);
-      if (!passwordMatch)
-        return res.status(401).json({ message: "Unauthorized" });
+    const passwordMatch = bcrypt.compareSync(password, foundUser.password);
+    if (!passwordMatch)
+      return res.status(401).json({ message: "Unauthorized" });
 
-      if (!foundUser.verified) {
-        const existingToken = await Token.findOne({
-          where: { userId: foundUser.id },
-        });
-        await existingToken?.destroy();
+    if (!foundUser.verified) {
+      const existingToken = await Token.findOne({
+        where: { userId: foundUser.id },
+      });
+      await existingToken?.destroy();
 
-        const verificationToken = await Token.create({
-          userId: foundUser.id!,
-          token: crypto.randomBytes(32).toString("hex"),
-        });
-
-        const url = `${process.env.FRONTEND_URL}/auth/${foundUser.id}/verify/${verificationToken.token}`;
-
-        await sendMail(foundUser.email, "Verify email", url);
-
-        return res
-          .status(400)
-          .json({ message: "Email sent to your account please verify" });
-      }
-
-      const accessToken = jwt.sign(
-        {
-          UserInfo: {
-            email: foundUser.email,
-            userId: foundUser.id,
-          },
-        },
-        String(process.env.ACCESS_TOKEN_SECRET),
-        { expiresIn: "1h" }
-      );
-
-      // create the refresh token
-      const refreshToken = jwt.sign(
-        { email: foundUser.email },
-        String(process.env.REFRESH_TOKEN_SECRET),
-        { expiresIn: "1d" }
-      );
-
-      res.cookie("jwt", refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+      const verificationToken = await Token.create({
+        userId: foundUser.id!,
+        token: crypto.randomBytes(32).toString("hex"),
       });
 
-      return res.json({ accessToken });
-    } catch (err) {
-      console.log(err);
+      const url = `${process.env.FRONTEND_URL}/auth/${foundUser.id}/verify/${verificationToken.token}`;
+
+      await sendMail(foundUser.email, "Verify email", url);
+
+      return res
+        .status(400)
+        .json({ message: "Email sent to your account please verify" });
     }
+
+    const accessToken = jwt.sign(
+      {
+        UserInfo: {
+          email: foundUser.email,
+          userId: foundUser.id,
+        },
+      },
+      String(process.env.ACCESS_TOKEN_SECRET),
+      { expiresIn: "1h" }
+    );
+
+    // create the refresh token
+    const refreshToken = jwt.sign(
+      { email: foundUser.email },
+      String(process.env.REFRESH_TOKEN_SECRET),
+      { expiresIn: "1d" }
+    );
+
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({ accessToken });
   }
 );
 
@@ -146,8 +142,8 @@ export const verifyController = expressAsyncHandler(
 export const forgotPasswordController = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { email } = req.body;
-    console.log(email);
-    const user = await User.findOne({ where: { email } });
+    console.log(email)
+     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(404).json({ message: "User not found!" });
     const existingToken = await Token.findOne({ where: { userId: user.id } });
     await existingToken?.destroy();
