@@ -36,6 +36,14 @@ const User = sequelize.define<UserInstance>("User", {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  phone: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  address: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 });
 
 export default User;

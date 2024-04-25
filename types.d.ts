@@ -10,6 +10,8 @@ interface UserAttributes {
   password: string;
   country?: string;
   verified?: boolean;
+  phone?: string;
+  address?: string
 }
 
 interface TokenAttributes {
