@@ -25,11 +25,11 @@ const FileMetaData = sequelize.define<FileMetaDataInstance>("Filemetadata", {
   },
   originalname: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
   },
   folderId: {
     type: DataTypes.INTEGER,
-    defaultValue: -1
+    defaultValue: -1,
   },
   mimetype: {
     type: DataTypes.STRING,

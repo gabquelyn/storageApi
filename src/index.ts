@@ -10,6 +10,7 @@ import cors from "cors";
 import corsOptions from "./utils/corsOptions";
 import fileRoutes from "./routes/fileRoutes";
 import profileRoute from "./routes/profileRoute";
+import paymentRoutes from "./routes/paymentRoute";
 dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 8080;
@@ -22,6 +23,7 @@ app.use(cookierParser());
 app.use("/auth", authRouter);
 app.use("/file", fileRoutes);
 app.use("/profile", profileRoute);
+app.use("/payment", paymentRoutes);
 app.use(errorHandler);
 
 sequelize

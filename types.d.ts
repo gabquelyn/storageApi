@@ -11,7 +11,7 @@ interface UserAttributes {
   country?: string;
   verified?: boolean;
   phone?: string;
-  address?: string
+  address?: string;
 }
 
 interface TokenAttributes {
@@ -19,6 +19,15 @@ interface TokenAttributes {
   userId: number;
   token: string;
   createdAt?: Date;
+}
+interface SubscriptionAttributes {
+  id: ?number;
+  userId: number;
+  subscriptionId: string;
+  active: boolean;
+  createdAt?: Date;
+  usage: number;
+  customerId: string
 }
 interface FileMetaDataAttribute {
   id?: number;

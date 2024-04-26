@@ -6,6 +6,7 @@ import FolderMetaData from "../model/foldermetadata";
 import FileMetaData from "../model/filemetadata";
 import * as Minio from "minio";
 import sequelize from "../utils/database";
+import Subscription from "../model/subscription";
 
 const minioClient = new Minio.Client({
   endPoint: process.env.MINIO_ENDPOINT!,
@@ -74,7 +75,7 @@ export const postFilesHandler = expressAsyncHandler(
 
           // Wait for the putObject operation to complete
           await putObjectPromise;
-
+          // create the usage record for stripe
           totalFileSize += file.size;
 
           // Create file metadata
@@ -93,6 +94,14 @@ export const postFilesHandler = expressAsyncHandler(
 
       // Wait for all uploads and metadata creations to complete
       await Promise.all(uploadPromises);
+      const userSubscription = await Subscription.findOne({
+        where: { userId },
+      });
+      
+      if (userSubscription) {
+        userSubscription.usage += totalFileSize;
+        await userSubscription.save()
+      }
 
       // Update folder totalSize
       if (folderExist && folderExist.userId === userId) {
