@@ -19,8 +19,14 @@ const port = process.env.PORT || 8080;
 
 app.use(logger);
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  if (!req.originalUrl.includes("webhook")) {
+    express.json()(req, res, () => {}); // Parse JSON
+    express.urlencoded({ extended: true })(req, res, next); // Parse URL-encoded
+  } else {
+    next();
+  }
+});
 app.use("/", express.static(path.join(__dirname, "public")));
 app.use(cookierParser());
 app.use("/auth", authRouter);
