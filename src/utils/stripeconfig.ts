@@ -25,9 +25,14 @@ export default async function configureStripe() {
       });
       console.log(productCreationRes, pricesCreationRes);
     }
-    console.log(existingEndpoints);
-
-    if (existingEndpoints.data.length === 0) {
+    // webhook secret
+    // "whsec_gT9EQEsYQTTNfqovTZp8PkhV1wEe9TNs"
+    const existingWebhook = existingEndpoints.data.find(
+      (endpoint) =>
+        endpoint.url === `${process.env.STRIPEWEBHOOK_URL}/payment/webhook`
+    );
+    console.log(existingWebhook?.secret);
+    if (!existingWebhook) {
       const webookREsponse = await stripe.webhookEndpoints.create({
         url: `${process.env.STRIPEWEBHOOK_URL}/payment/webhook`,
         enabled_events: [

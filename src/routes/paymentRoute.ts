@@ -4,6 +4,7 @@ import {
   createCheckoutHandler,
   webhooksHandler,
   allUsage,
+  getSubscription,
 } from "../controllers/paymentController";
 const paymentRoutes = Router();
 
@@ -11,4 +12,5 @@ const paymentRoutes = Router();
 paymentRoutes.route("/create").post(verifyJwt, createCheckoutHandler);
 paymentRoutes.route("/webhook").post(webhooksHandler);
 paymentRoutes.route("/usage").get(verifyJwt, allUsage);
+paymentRoutes.route("/subscription").get(verifyJwt, getSubscription);
 export default paymentRoutes;

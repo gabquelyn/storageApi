@@ -43,8 +43,8 @@ export const createCheckoutHandler = expressAsyncHandler(
       subscription_data: {
         trial_period_days: 7,
       },
-      success_url: `${process.env.FRONTEND_URL}/?success=true`,
-      cancel_url: `${process.env.FRONTEND_URL}?canceled=true`,
+      success_url: `${process.env.FRONTEND_URL}/dashboard/?success=true`,
+      cancel_url: `${process.env.FRONTEND_URL}/dashboard?canceled=true`,
     });
     return res.status(200).json({ ...session });
     // res.redirect(303, session.url!);
@@ -54,6 +54,7 @@ export const createCheckoutHandler = expressAsyncHandler(
 export const webhooksHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     let event = req.body;
+    console.log("Called the weebhook!")
     const endpointSecret = "whsec_12345";
     if (endpointSecret) {
       // Get the signature sent by Stripe
@@ -196,5 +197,14 @@ export const allUsage = expressAsyncHandler(
       subscription: userSub.subscriptionItemId,
     });
     return res.status(200).json([...subscriptions.data]);
+  }
+);
+
+export const getSubscription = expressAsyncHandler(
+  async (req: Request, res: Response): Promise<any> => {
+    const subscriptionDetails = await Subscription.findOne({
+      where: { userId: (req as CustomRequest).userId },
+    });
+    res.status(200).json({ ...subscriptionDetails });
   }
 );
