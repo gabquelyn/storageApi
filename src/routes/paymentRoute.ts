@@ -8,8 +8,6 @@ import {
   getSubscription,
 } from "../controllers/paymentController";
 const paymentRoutes = Router();
-
-// paymentRoutes.use(verifyJwt)
 paymentRoutes.route("/create").post(verifyJwt, createCheckoutHandler);
 paymentRoutes
   .route("/webhook")

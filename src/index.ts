@@ -1,4 +1,4 @@
-import express, { Express } from "express";
+import express, { Express, NextFunction } from "express";
 import logger, { logEvents } from "./middlewares/logger";
 import cookierParser from "cookie-parser";
 import errorHandler from "./middlewares/errorHandler";
@@ -19,14 +19,22 @@ const port = process.env.PORT || 8080;
 
 app.use(logger);
 app.use(cors(corsOptions));
-app.use((req, res, next) => {
-  if (!req.originalUrl.includes("webhook")) {
-    express.json()(req, res, () => {});
-    express.urlencoded({ extended: true })(req, res, next); 
-  } else {
-    next();
+app.use(
+  (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ): void => {
+    console.log(req.originalUrl);
+    if (req.originalUrl.includes("/webhook")) {
+      next();
+    } else {
+      express.json()(req, res, next);
+    }
   }
-});
+);
+
+app.use(express.urlencoded({ extended: true }));
 app.use("/", express.static(path.join(__dirname, "public")));
 app.use(cookierParser());
 app.use("/auth", authRouter);
