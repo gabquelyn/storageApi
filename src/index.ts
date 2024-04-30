@@ -11,9 +11,12 @@ import corsOptions from "./utils/corsOptions";
 import fileRoutes from "./routes/fileRoutes";
 import profileRoute from "./routes/profileRoute";
 import paymentRoutes from "./routes/paymentRoute";
+import configureStripe from "./utils/stripeconfig";
+
 dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 8080;
+
 app.use(logger);
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -28,6 +31,7 @@ app.use(errorHandler);
 
 sequelize
   .sync()
+  .then(() => configureStripe())
   .then((res) => {
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);

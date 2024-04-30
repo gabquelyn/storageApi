@@ -26,8 +26,8 @@ interface SubscriptionAttributes {
   subscriptionId: string;
   active: boolean;
   createdAt?: Date;
-  usage: number;
-  customerId: string
+  customerId: string;
+  subscriptionItemId: string;
 }
 interface FileMetaDataAttribute {
   id?: number;

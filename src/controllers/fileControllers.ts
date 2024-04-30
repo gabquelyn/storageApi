@@ -7,7 +7,9 @@ import FileMetaData from "../model/filemetadata";
 import * as Minio from "minio";
 import sequelize from "../utils/database";
 import Subscription from "../model/subscription";
+import Stripe from "stripe";
 
+const stripe = new Stripe(process.env.STRIPE_APIKEY!);
 const minioClient = new Minio.Client({
   endPoint: process.env.MINIO_ENDPOINT!,
   port: 9000,
@@ -35,6 +37,13 @@ export const postFilesHandler = expressAsyncHandler(
     const files = req.files;
     const { folderId } = req.body;
     const userId = (req as CustomRequest).userId;
+    const userSubscription = await Subscription.findOne({
+      where: { userId },
+    });
+
+    if (!userSubscription || !userSubscription.active) {
+      return res.status(402).json({ message: "Subscription required!" });
+    }
 
     const folderExist = await FolderMetaData.findByPk(folderId);
     if ((files?.length as number) < 0)
@@ -77,7 +86,6 @@ export const postFilesHandler = expressAsyncHandler(
           await putObjectPromise;
           // create the usage record for stripe
           totalFileSize += file.size;
-
           // Create file metadata
           await FileMetaData.create({
             userId,
@@ -94,14 +102,17 @@ export const postFilesHandler = expressAsyncHandler(
 
       // Wait for all uploads and metadata creations to complete
       await Promise.all(uploadPromises);
-      const userSubscription = await Subscription.findOne({
-        where: { userId },
-      });
-      
-      if (userSubscription) {
-        userSubscription.usage += totalFileSize;
-        await userSubscription.save()
-      }
+
+      // calculate metered usage
+      const usageRes = await stripe.subscriptionItems.createUsageRecord(
+        userSubscription.subscriptionItemId,
+        {
+          quantity: totalFileSize,
+          timestamp: Math.floor(Date.now() / 1000),
+        }
+      );
+
+      console.log(usageRes);
 
       // Update folder totalSize
       if (folderExist && folderExist.userId === userId) {

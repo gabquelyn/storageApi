@@ -11,7 +11,7 @@ export const createCheckoutHandler = expressAsyncHandler(
     const existingCustomer = await stripe.customers.list({
       email,
     });
-    // create new customer if he/she doesn't exist
+    // create new customer doesn't exist
     if (existingCustomer.data.length === 0) {
       const newCustomer = await stripe.customers.create({
         email,
@@ -20,15 +20,20 @@ export const createCheckoutHandler = expressAsyncHandler(
     }
 
     const prices = await stripe.prices.list({
-      lookup_keys: [req.body.lookup_key],
       expand: ["data.product"],
     });
+
+    const productPrices = prices.data.find(
+      (price) =>
+        (price.product as Stripe.Product).name === process.env.PRODUCT_NAME
+    );
+
     const session = await stripe.checkout.sessions.create({
       billing_address_collection: "auto",
       customer: customerId,
       line_items: [
         {
-          price: prices.data[0].id,
+          price: productPrices!.id,
           // For metered billing, do not pass quantity
           //   quantity: 1,
         },
@@ -38,10 +43,11 @@ export const createCheckoutHandler = expressAsyncHandler(
       subscription_data: {
         trial_period_days: 7,
       },
-      success_url: `${process.env.FRONTEND_URL}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.FRONTEND_URL}/?success=true`,
       cancel_url: `${process.env.FRONTEND_URL}?canceled=true`,
     });
-    res.redirect(303, session.url!);
+    return res.status(200).json({ ...session });
+    // res.redirect(303, session.url!);
   }
 );
 
@@ -82,41 +88,58 @@ export const webhooksHandler = expressAsyncHandler(
           existingSubscriptionDetails.subscriptionId = subscription.id;
           await existingSubscriptionDetails.save();
         } else {
+          const prices = await stripe.prices.list({
+            expand: ["data.product"],
+          });
+
+          const productPrices = prices.data.find(
+            (price) =>
+              (price.product as Stripe.Product).name ===
+              process.env.PRODUCT_NAME
+          );
+
+          const subscriptionItem = await stripe.subscriptionItems.create({
+            subscription: subscription.id,
+            price: productPrices!.id,
+            quantity: 0,
+          });
+
+          console.log(subscriptionItem);
           await Subscription.create({
             userId: subscriberId,
             subscriptionId: subscription.id,
             active: true,
             customerId: event.data.object.customer,
-            usage: 0,
+            subscriptionItemId: subscriptionItem.id,
           });
         }
         break;
 
       case "invoice.created":
-        let quantity = 1;
-        if (existingSubscriptionDetails) {
-          quantity = Math.round(
-            existingSubscriptionDetails.usage / (1024 * 1024 * 1024)
-          );
-        }
-        await stripe.subscriptions.update(subscription!.id, {
-          items: [
-            {
-              id: "product_id",
-              quantity,
-            },
-          ],
-        });
+        // the date of billing cycle
+        const currentDate = new Date();
+        const subscriptionDate = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() - 1,
+          currentDate.getDate()
+        );
+
+        // convert to Unix object as the usage records
+        const currentDateTimeStamp = Math.floor(currentDate.getTime() / 1000);
+        const subscriptionDateTimeStamp = Math.floor(
+          subscriptionDate.getTime() / 1000
+        );
+
+        // const allMonthlyUsage = stripe.subscriptionItems.retrieve(existingSubscriptionDetails!.subscriptionItemId, {expand: []})
+
+        console.log("invoice created");
+
         break;
 
       case "invoice.payment_succeeded":
         subscription = event.data.object;
         status = subscription.status;
         console.log(`Subscription status is ${status}.`);
-        if (existingSubscriptionDetails) {
-          existingSubscriptionDetails.usage = 0;
-          await existingSubscriptionDetails.save();
-        }
         break;
 
       case "customer.subscription.deleted":

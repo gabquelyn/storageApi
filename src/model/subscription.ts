@@ -17,13 +17,11 @@ const subscription = sequelize.define<SubscriptionInstance>("Subscription", {
     unique: true,
     allowNull: false,
   },
-  usage: {
-    type: DataTypes.INTEGER,
-    unique: true,
-    allowNull: false,
-    defaultValue: 0,
-  },
   subscriptionId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  subscriptionItemId: {
     type: DataTypes.STRING,
     allowNull: false,
   },
