@@ -21,8 +21,8 @@ app.use(logger);
 app.use(cors(corsOptions));
 app.use((req, res, next) => {
   if (!req.originalUrl.includes("webhook")) {
-    express.json()(req, res, () => {}); // Parse JSON
-    express.urlencoded({ extended: true })(req, res, next); // Parse URL-encoded
+    express.json()(req, res, () => {});
+    express.urlencoded({ extended: true })(req, res, next); 
   } else {
     next();
   }

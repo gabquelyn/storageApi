@@ -102,7 +102,6 @@ export const webhooksHandler = expressAsyncHandler(
           const subscriptionItem = await stripe.subscriptionItems.create({
             subscription: subscription.id,
             price: productPrices!.id,
-            quantity: 0,
           });
 
           console.log(subscriptionItem);
