@@ -54,17 +54,16 @@ export const createCheckoutHandler = expressAsyncHandler(
 export const webhooksHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     let event = req.body;
-    console.log("Called the weebhook!")
-    const endpointSecret = "whsec_12345";
-    if (endpointSecret) {
+    console.log("Called the weebhook!");
+    if (process.env.ENDPOINT_SECRET) {
       // Get the signature sent by Stripe
       const signature = req.headers["stripe-signature"];
-      console.log(signature)
+      console.log(signature);
       try {
         event = stripe.webhooks.constructEvent(
           req.body,
           signature!,
-          endpointSecret
+          process.env.ENDPOINT_SECRET
         );
       } catch (err) {
         console.log(`⚠️  Webhook signature verification failed.`, err);
