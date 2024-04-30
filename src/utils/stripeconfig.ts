@@ -31,7 +31,17 @@ export default async function configureStripe() {
       (endpoint) =>
         endpoint.url === `${process.env.STRIPEWEBHOOK_URL}/payment/webhook`
     );
-    console.log(existingWebhook?.secret);
+
+    // const subscriptionItem = await stripe.subscriptionItems.list({
+    //   subscription: "sub_1PBKLdDyZUus6Ej3SUXJd2Qd",
+    // });
+
+    // const existingSubScriptionItem = subscriptionItem.data.find(
+    //   (item) => item.price.id === "price_1PB4X5DyZUus6Ej3H6zZMYN1"
+    // );
+
+    // console.log(existingSubScriptionItem);
+
     if (!existingWebhook) {
       const webookREsponse = await stripe.webhookEndpoints.create({
         url: `${process.env.STRIPEWEBHOOK_URL}/payment/webhook`,

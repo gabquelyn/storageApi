@@ -54,11 +54,11 @@ export const createCheckoutHandler = expressAsyncHandler(
 export const webhooksHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     let event = req.body;
-    console.log("Called the weebhook!", req.body);
+    console.log("Called the weebhook!");
     if (process.env.ENDPOINT_SECRET) {
       // Get the signature sent by Stripe
       const signature = req.headers["stripe-signature"];
-      console.log(signature);
+
       try {
         event = stripe.webhooks.constructEvent(
           req.body,
@@ -98,19 +98,32 @@ export const webhooksHandler = expressAsyncHandler(
               (price.product as Stripe.Product).name ===
               process.env.PRODUCT_NAME
           );
-
-          const subscriptionItem = await stripe.subscriptionItems.create({
+          let subscriptionItemId;
+          const allSubscriptionItem = await stripe.subscriptionItems.list({
             subscription: subscription.id,
-            price: productPrices!.id,
           });
 
-          console.log(subscriptionItem);
+          const existingSubscriptionItem = allSubscriptionItem.data.find(
+            (item) => item.price.id === productPrices?.id
+          );
+
+          if (!existingSubscriptionItem) {
+            const subscriptionItem = await stripe.subscriptionItems.create({
+              subscription: subscription.id,
+              price: productPrices!.id,
+            });
+            console.log(subscriptionItem);
+            subscriptionItemId = subscriptionItem.id;
+          } else {
+            subscriptionItemId = existingSubscriptionItem.id;
+          }
+
           await Subscription.create({
             userId: subscriberId,
             subscriptionId: subscription.id,
             active: true,
             customerId: event.data.object.customer,
-            subscriptionItemId: subscriptionItem.id,
+            subscriptionItemId,
           });
         }
         break;
