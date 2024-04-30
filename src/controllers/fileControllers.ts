@@ -108,7 +108,7 @@ export const postFilesHandler = expressAsyncHandler(
         userSubscription.subscriptionItemId,
         {
           quantity: totalFileSize,
-          timestamp: Math.floor(Date.now() / 1000),
+          timestamp: "now"
         }
       );
 

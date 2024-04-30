@@ -182,3 +182,19 @@ export const portalHandler = expressAsyncHandler(
     res.redirect(303, portalSession.url);
   }
 );
+
+export const allUsage = expressAsyncHandler(
+  async (req: Request, res: Response): Promise<any> => {
+    const userSub = await Subscription.findOne({
+      where: { userId: (req as CustomRequest).userId },
+    });
+    if (!userSub)
+      return res
+        .status(404)
+        .json({ message: "No usage record for non subscribers" });
+    const subscriptions = await stripe.subscriptionItems.list({
+      subscription: userSub.subscriptionItemId,
+    });
+    return res.status(200).json([...subscriptions.data]);
+  }
+);

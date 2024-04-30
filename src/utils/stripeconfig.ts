@@ -29,10 +29,7 @@ export default async function configureStripe() {
 
     if (existingEndpoints.data.length === 0) {
       const webookREsponse = await stripe.webhookEndpoints.create({
-        url: `${
-          process.env.STRIPEWEBHOOK_URL ||
-          `http://localhost:${process.env.PORT || 8080}`
-        }/payment/webhook`,
+        url: `${process.env.STRIPEWEBHOOK_URL}/payment/webhook`,
         enabled_events: [
           "customer.subscription.created",
           "invoice.created",
@@ -44,6 +41,6 @@ export default async function configureStripe() {
       console.log(webookREsponse);
     }
   } catch (err) {
-    console.log(err);
+    return console.log(err);
   }
 }
