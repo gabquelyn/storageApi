@@ -118,13 +118,14 @@ export const webhooksHandler = expressAsyncHandler(
             subscriptionItemId = existingSubscriptionItem.id;
           }
 
-          await Subscription.create({
+          const res = await Subscription.create({
             userId: subscriberId,
             subscriptionId: subscription.id,
             active: true,
             customerId: event.data.object.customer,
             subscriptionItemId,
           });
+          console.log(res);
         }
         break;
 
