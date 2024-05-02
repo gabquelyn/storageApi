@@ -55,7 +55,7 @@ export const createCheckoutHandler = expressAsyncHandler(
 export const webhooksHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     let event = req.body;
-    console.log("Called the weebhook!");
+    console.log("Called the weebhook!", event);
     if (process.env.ENDPOINT_SECRET) {
       // Get the signature sent by Stripe
       const signature = req.headers["stripe-signature"];
@@ -74,7 +74,7 @@ export const webhooksHandler = expressAsyncHandler(
     let subscription;
     let status;
     const subscriberId = event.data.object.metadata.userId;
-    console.log(event.data.object);
+    // console.log(event.data.object);
     const existingSubscriptionDetails = await Subscription.findByPk(
       subscriberId
     );
@@ -127,6 +127,7 @@ export const webhooksHandler = expressAsyncHandler(
             customerId: event.data.object.customer,
             subscriptionItemId,
           });
+
           console.log(res);
         }
         break;
