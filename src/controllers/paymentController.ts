@@ -46,6 +46,7 @@ export const createCheckoutHandler = expressAsyncHandler(
       success_url: `${process.env.FRONTEND_URL}/dashboard/?success=true`,
       cancel_url: `${process.env.FRONTEND_URL}/dashboard?canceled=true`,
     });
+    console.log(session);
     return res.status(200).json({ ...session });
     // res.redirect(303, session.url!);
   }
@@ -73,12 +74,7 @@ export const webhooksHandler = expressAsyncHandler(
     let subscription;
     let status;
     const subscriberId = event.data.object.metadata.userId;
-    console.log(
-      subscriberId,
-      event.data,
-      event.data.object,
-      event.data.object.metadata
-    );
+    console.log(event.data.object);
     const existingSubscriptionDetails = await Subscription.findByPk(
       subscriberId
     );
