@@ -73,6 +73,12 @@ export const webhooksHandler = expressAsyncHandler(
     let subscription;
     let status;
     const subscriberId = event.data.object.metadata.userId;
+    console.log(
+      subscriberId,
+      event.data,
+      event.data.object,
+      event.data.object.metadata
+    );
     const existingSubscriptionDetails = await Subscription.findByPk(
       subscriberId
     );
