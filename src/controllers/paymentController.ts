@@ -43,11 +43,10 @@ export const createCheckoutHandler = expressAsyncHandler(
       subscription_data: {
         trial_period_days: 7,
       },
-      success_url: `${process.env.FRONTEND_URL}/dashboard/?success=true`,
+      success_url: `${process.env.FRONTEND_URL}/?success=true`,
       cancel_url: `${process.env.FRONTEND_URL}/dashboard?canceled=true`,
     });
     return res.status(200).json({ ...session });
-    // res.redirect(303, session.url!);
   }
 );
 
@@ -142,7 +141,6 @@ export const webhooksHandler = expressAsyncHandler(
             customerId: event.data.object.customer,
             subscriptionItemId,
           });
-
           console.log(res);
         }
         break;
@@ -150,21 +148,7 @@ export const webhooksHandler = expressAsyncHandler(
       case "invoice.created":
         // the date of billing cycle
         const currentDate = new Date();
-        const subscriptionDate = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth() - 1,
-          currentDate.getDate()
-        );
-
-        // convert to Unix object as the usage records
-        const currentDateTimeStamp = Math.floor(currentDate.getTime() / 1000);
-        const subscriptionDateTimeStamp = Math.floor(
-          subscriptionDate.getTime() / 1000
-        );
-
-        // const allMonthlyUsage = stripe.subscriptionItems.retrieve(existingSubscriptionDetails!.subscriptionItemId, {expand: []})
-
-        console.log("invoice created");
+        console.log("invoice created", currentDate);
 
         break;
 
@@ -202,16 +186,16 @@ export const webhooksHandler = expressAsyncHandler(
 
 export const portalHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
-    const userId = (req as CustomRequest).userId;
-    const existingCustomer = await Subscription.findOne({ where: { userId } });
-    if (!existingCustomer)
-      return res.status(404).json({ message: "Customer does not exist" });
+    // const userId = (req as CustomRequest).userId;
+    // const existingCustomer = await Subscription.findOne({ where: { userId } });
+    // if (!existingCustomer)
+    //   return res.status(404).json({ message: "Customer does not exist" });
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: existingCustomer.customerId,
+      customer: "cus_Q2OPFtObZkVdKj",
       return_url: `${process.env.FRONTEND_URL}/billing`,
     });
-
-    res.redirect(303, portalSession.url);
+    console.log(portalSession);
+    // res.redirect(303, portalSession.url);
   }
 );
 

@@ -6,6 +6,7 @@ import {
   webhooksHandler,
   allUsage,
   getSubscription,
+  portalHandler,
 } from "../controllers/paymentController";
 const paymentRoutes = Router();
 paymentRoutes.route("/create").post(verifyJwt, createCheckoutHandler);
@@ -14,4 +15,5 @@ paymentRoutes
   .post(express.raw({ type: "application/json" }), webhooksHandler);
 paymentRoutes.route("/usage").get(verifyJwt, allUsage);
 paymentRoutes.route("/subscription").get(verifyJwt, getSubscription);
+paymentRoutes.route("/portal").get(portalHandler);
 export default paymentRoutes;

@@ -107,13 +107,11 @@ export const postFilesHandler = expressAsyncHandler(
       const usageRes = await stripe.subscriptionItems.createUsageRecord(
         userSubscription.subscriptionItemId,
         {
-          quantity: totalFileSize,
-          timestamp: "now"
+          quantity: Math.round(totalFileSize / 1024),
+          timestamp: "now",
         }
       );
-
       console.log(usageRes);
-
       // Update folder totalSize
       if (folderExist && folderExist.userId === userId) {
         folderExist.totalSize += totalFileSize;
