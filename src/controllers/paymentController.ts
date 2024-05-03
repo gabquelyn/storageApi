@@ -54,7 +54,7 @@ export const createCheckoutHandler = expressAsyncHandler(
 export const webhooksHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     let event = req.body;
-    console.log("Called the weebhook!", event);
+    console.log("Called the weebhook!");
     if (process.env.ENDPOINT_SECRET) {
       // Get the signature sent by Stripe
       const signature = req.headers["stripe-signature"];
@@ -81,6 +81,7 @@ export const webhooksHandler = expressAsyncHandler(
 
     switch (event.type) {
       case "checkout.session.completed":
+        console.log(`Called checkout session completed :)`);
         const sessionId = event.data.object.id;
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         const subscriptionId = session.subscription;

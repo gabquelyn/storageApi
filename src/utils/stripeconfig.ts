@@ -25,8 +25,9 @@ export default async function configureStripe() {
       });
       console.log(productCreationRes, pricesCreationRes);
     }
+
     // webhook secret
-    // "whsec_gT9EQEsYQTTNfqovTZp8PkhV1wEe9TNs"
+    // "whsec_XFv2SwqXE1L8FhnmTHDUf6hz002PduVX"
     const existingWebhook = existingEndpoints.data.find(
       (endpoint) =>
         endpoint.url === `${process.env.STRIPEWEBHOOK_URL}/payment/webhook`
@@ -35,11 +36,16 @@ export default async function configureStripe() {
     // const subscriptions = await stripe.subscriptions.list();
     // console.log(subscriptions);
 
+    // subscriptions.data.forEach(async (sub) => {
+    //   const subscriptions = await stripe.subscriptions.cancel(sub.id);
+    //   console.log(subscriptions);
+    // });
 
     if (!existingWebhook) {
       const webookREsponse = await stripe.webhookEndpoints.create({
         url: `${process.env.STRIPEWEBHOOK_URL}/payment/webhook`,
         enabled_events: [
+          "checkout.session.completed",
           "customer.subscription.created",
           "invoice.created",
           "invoice.payment_succeeded",
