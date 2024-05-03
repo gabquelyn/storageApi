@@ -37,8 +37,10 @@ export default async function configureStripe() {
     // console.log(subscriptions);
 
     // subscriptions.data.forEach(async (sub) => {
-    //   const subscriptions = await stripe.subscriptions.cancel(sub.id);
-    //   console.log(subscriptions);
+    // const subscriptions = await stripe.subscriptions.retrieve(
+    //   "sub_1PCJE6DyZUus6Ej3EgobUzeQ"
+    // );
+    // console.log(subscriptions);
     // });
 
     if (!existingWebhook) {

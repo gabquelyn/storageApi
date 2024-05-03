@@ -72,12 +72,6 @@ export const webhooksHandler = expressAsyncHandler(
     }
     let subscription;
     let status;
-    const subscriberId = event.data.object.metadata.userId;
-    // console.log(event.data.object);
-    const existingSubscriptionDetails = await Subscription.findByPk(
-      subscriberId
-    );
-    // Handle the event different events
 
     switch (event.type) {
       case "checkout.session.completed":
@@ -97,12 +91,20 @@ export const webhooksHandler = expressAsyncHandler(
       // when successfully subscribed;
       case "customer.subscription.created":
         subscription = event.data.object;
-        console.log(subscription);
         status = subscription.status;
         console.log(`Subscription status is ${status}.`);
         // create or update subscription of the user.
+        const subscriptionDetails = await stripe.subscriptions.retrieve(
+          subscription.id
+        );
+        console.log(subscriptionDetails);
+        const existingSubscriptionDetails = await Subscription.findByPk(
+          subscriptionDetails.metadata.userId
+        );
+
         if (existingSubscriptionDetails) {
           existingSubscriptionDetails.subscriptionId = subscription.id;
+          existingSubscriptionDetails.active = true;
           await existingSubscriptionDetails.save();
         } else {
           const prices = await stripe.prices.list({
@@ -128,14 +130,13 @@ export const webhooksHandler = expressAsyncHandler(
               subscription: subscription.id,
               price: productPrices!.id,
             });
-            console.log(subscriptionItem);
             subscriptionItemId = subscriptionItem.id;
           } else {
             subscriptionItemId = existingSubscriptionItem.id;
           }
 
           const res = await Subscription.create({
-            userId: subscriberId,
+            userId: +subscriptionDetails.metadata.userId,
             subscriptionId: subscription.id,
             active: true,
             customerId: event.data.object.customer,
@@ -177,10 +178,10 @@ export const webhooksHandler = expressAsyncHandler(
         subscription = event.data.object;
         status = subscription.status;
         console.log(`Subscription status is ${status}.`);
-        if (existingSubscriptionDetails) {
-          existingSubscriptionDetails.active = false;
-          await existingSubscriptionDetails.save();
-        }
+        // if (existingSubscriptionDetails) {
+        //   existingSubscriptionDetails.active = false;
+        //   await existingSubscriptionDetails.save();
+        // }
         break;
 
       case "customer.subscription.trial_will_end":
