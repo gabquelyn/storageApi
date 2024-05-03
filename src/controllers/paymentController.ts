@@ -80,6 +80,13 @@ export const webhooksHandler = expressAsyncHandler(
     // Handle the event different events
 
     switch (event.type) {
+      case "checkout.session.completed":
+        const sessionId = event.data.object.id;
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        const subscriptionId = session.subscription;
+        const metadata = session.metadata;
+        console.log(session);
+
       // when successfully subscribed;
       case "customer.subscription.created":
         subscription = event.data.object;
