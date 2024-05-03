@@ -86,11 +86,18 @@ export const webhooksHandler = expressAsyncHandler(
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         const subscriptionId = session.subscription;
         const metadata = session.metadata;
-        console.log(session);
+        const updatedSub = await stripe.subscriptions.update(
+          String(subscriptionId),
+          {
+            metadata: { ...metadata },
+          }
+        );
+        console.log(updatedSub);
 
       // when successfully subscribed;
       case "customer.subscription.created":
         subscription = event.data.object;
+        console.log(subscription);
         status = subscription.status;
         console.log(`Subscription status is ${status}.`);
         // create or update subscription of the user.
