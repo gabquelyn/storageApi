@@ -21,7 +21,7 @@ export const initateShareHandler = expressAsyncHandler(
     const userId = (req as CustomRequest).userId;
     const existingShareLink = await Share.findOne({ where: { type, itemId } });
     if (existingShareLink)
-      return res.status(400).json({ message: "Link already exists" });
+      return res.status(200).json({ ...existingShareLink.dataValues });
     const newShare = await Share.create({
       itemId: +itemId,
       type: type as "file" | "folder",
@@ -30,18 +30,19 @@ export const initateShareHandler = expressAsyncHandler(
       public: false,
     });
     console.log(newShare);
-    return res.status(201).json({ code: newShare.code });
+    return res.status(201).json({ ...newShare.dataValues });
   }
 );
 
 export const toggleVisibility = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
-    const { type, itemId } = req.body;
+    const { type, itemId } = req.params;
     const existingShareLink = await Share.findOne({ where: { type, itemId } });
     if (!existingShareLink)
       return res.status(404).json({ message: "Cannot find item link" });
     existingShareLink.public = !existingShareLink.public;
-    return res.status(200).json({ message: "visibility of fill altered" });
+    await existingShareLink.save();
+    return res.status(200).json({ public: existingShareLink.public });
   }
 );
 
@@ -108,6 +109,6 @@ export const getShareDetails = expressAsyncHandler(
     }
 
     const fileDetails = await FileMetaData.findByPk(shareDetails.itemId);
-    return res.status(200).json([{ ...fileDetails }]);
+    return res.status(200).json([{ ...fileDetails?.dataValues }]);
   }
 );

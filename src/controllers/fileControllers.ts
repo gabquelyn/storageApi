@@ -8,6 +8,7 @@ import * as Minio from "minio";
 import sequelize from "../utils/database";
 import Subscription from "../model/subscription";
 import Stripe from "stripe";
+import Share from "../model/share";
 
 const stripe = new Stripe(process.env.STRIPE_APIKEY!);
 const minioClient = new Minio.Client({
@@ -41,9 +42,9 @@ export const postFilesHandler = expressAsyncHandler(
       where: { userId },
     });
 
-    if (!userSubscription || !userSubscription.active) {
-      return res.status(402).json({ message: "Subscription required!" });
-    }
+    // if (!userSubscription || !userSubscription.active) {
+    //   return res.status(402).json({ message: "Subscription required!" });
+    // }
 
     const folderExist = await FolderMetaData.findByPk(folderId);
     if ((files?.length as number) < 0)
@@ -104,14 +105,14 @@ export const postFilesHandler = expressAsyncHandler(
       await Promise.all(uploadPromises);
 
       // calculate metered usage
-      const usageRes = await stripe.subscriptionItems.createUsageRecord(
-        userSubscription.subscriptionItemId,
-        {
-          quantity: Math.round(totalFileSize / 1024),
-          timestamp: "now",
-        }
-      );
-      console.log(usageRes);
+      // const usageRes = await stripe.subscriptionItems.createUsageRecord(
+      //   userSubscription.subscriptionItemId,
+      //   {
+      //     quantity: Math.round(totalFileSize / 1024),
+      //     timestamp: "now",
+      //   }
+      // );
+      // console.log(usageRes);
       // Update folder totalSize
       if (folderExist && folderExist.userId === userId) {
         folderExist.totalSize += totalFileSize;
@@ -183,9 +184,14 @@ export const deleteFileHandler = expressAsyncHandler(
         await existInfolder.save();
       }
     }
-    if (!fileMetaData) return res.status(404);
 
+    const shareLink = await Share.findOne({
+      where: { itemId: fileId, type: "file" },
+    });
+    await shareLink?.destroy();
+    if (!fileMetaData) return res.status(404);
     await fileMetaData.destroy();
+
     await minioClient.removeObject(process.env.BUCKET_NAME!, fileMetaData.key);
     res
       .status(200)

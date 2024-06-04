@@ -3,7 +3,7 @@ import { DataTypes, Model } from "sequelize";
 import { linkAttributes } from "../../types";
 
 interface ShareInstance extends Model<linkAttributes>, linkAttributes {}
-const share = sequelize.define<ShareInstance>("Token", {
+const share = sequelize.define<ShareInstance>("Share", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -12,7 +12,6 @@ const share = sequelize.define<ShareInstance>("Token", {
   },
   userId: {
     type: DataTypes.INTEGER,
-    unique: true,
     allowNull: false,
   },
   code: {
@@ -23,15 +22,13 @@ const share = sequelize.define<ShareInstance>("Token", {
   public: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
-    allowNull: false,
   },
   type: {
     type: DataTypes.STRING,
     defaultValue: "folder",
-    allowNull: false,
   },
   itemId: {
-    type: DataTypes.NUMBER,
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
 });
