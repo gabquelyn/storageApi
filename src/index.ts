@@ -11,6 +11,7 @@ import corsOptions from "./utils/corsOptions";
 import fileRoutes from "./routes/fileRoutes";
 import profileRoute from "./routes/profileRoute";
 import paymentRoutes from "./routes/paymentRoute";
+import shareRoutes from "./routes/shareRoutes";
 import configureStripe from "./utils/stripeconfig";
 
 dotenv.config();
@@ -40,6 +41,7 @@ app.use(cookierParser());
 app.use("/auth", authRouter);
 app.use("/file", fileRoutes);
 app.use("/profile", profileRoute);
+app.use("/share", shareRoutes);
 app.use("/payment", paymentRoutes);
 app.use(errorHandler);
 

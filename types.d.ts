@@ -20,6 +20,16 @@ interface TokenAttributes {
   token: string;
   createdAt?: Date;
 }
+
+interface linkAttributes {
+  id: ?number;
+  userId: number;
+  code: string;
+  public: boolean;
+  type: "file" | "folder";
+  itemId: number;
+}
+
 interface SubscriptionAttributes {
   id: ?number;
   userId: number;

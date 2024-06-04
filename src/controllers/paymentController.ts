@@ -160,6 +160,7 @@ export const webhooksHandler = expressAsyncHandler(
 
       case "customer.subscription.deleted":
         subscription = event.data.object;
+        
         status = subscription.status;
         console.log(`Subscription status is ${status}.`);
         // if (existingSubscriptionDetails) {

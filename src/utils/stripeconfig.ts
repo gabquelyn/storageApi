@@ -11,12 +11,12 @@ export default async function configureStripe() {
     if (!productExisting) {
       const productCreationRes = await stripe.products.create({
         name: process.env.PRODUCT_NAME!,
-        description: "Approximate cost per KB disk space.",
+        description: "Approximate Cost Per KB of Disk space",
       });
 
       const pricesCreationRes = await stripe.prices.create({
         product: productCreationRes.id,
-        unit_amount_decimal: "0.002",
+        unit_amount_decimal: "0.2",
         currency: "usd",
         recurring: {
           interval: "month",
@@ -30,15 +30,6 @@ export default async function configureStripe() {
       (endpoint) =>
         endpoint.url === `${process.env.STRIPEWEBHOOK_URL}/payment/webhook`
     );
-
-    // const subscriptions = await stripe.subscriptions.list();
-    // console.log(subscriptions)
-
-    // subscriptions.data.forEach(async (sub) => {
-    // const subscriptions = await stripe.subscriptions.cancel(sub.id)
-    // console.log(subscriptions);
-    // });
-
 
     if (!existingWebhook) {
       const webookREsponse = await stripe.webhookEndpoints.create({
