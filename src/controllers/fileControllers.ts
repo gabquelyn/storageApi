@@ -243,9 +243,6 @@ export const getFoldersAndFilesHandler = expressAsyncHandler(
   }
 );
 
-// clientid: 710696958010-shbqqmn4eh7c8s3l0b9r6nr0cho1dnl3.apps.googleusercontent.com
-// client secret: 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
-
 export const getFolderFilesHandler = expressAsyncHandler(
   async (req: Request, res: Response): Promise<any> => {
     const { folderId } = req.params;
