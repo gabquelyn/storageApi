@@ -13,7 +13,6 @@ import profileRoute from "./routes/profileRoute";
 import paymentRoutes from "./routes/paymentRoute";
 import shareRoutes from "./routes/shareRoutes";
 import configureStripe from "./utils/stripeconfig";
-import oauthRoutes from "./routes/oauthRoutes";
 
 dotenv.config();
 const app: Express = express();
@@ -44,7 +43,6 @@ app.use("/file", fileRoutes);
 app.use("/profile", profileRoute);
 app.use("/share", shareRoutes);
 app.use("/payment", paymentRoutes);
-app.use("/oauth", oauthRoutes)
 app.use(errorHandler);
 
 sequelize
