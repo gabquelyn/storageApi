@@ -42,9 +42,9 @@ export const postFilesHandler = expressAsyncHandler(
       where: { userId },
     });
 
-    // if (!userSubscription || !userSubscription.active) {
-    //   return res.status(402).json({ message: "Subscription required!" });
-    // }
+    if (!userSubscription || !userSubscription.active) {
+      return res.status(402).json({ message: "Subscription required!" });
+    }
 
     const folderExist = await FolderMetaData.findByPk(folderId);
     if ((files?.length as number) < 0)
@@ -105,14 +105,14 @@ export const postFilesHandler = expressAsyncHandler(
       await Promise.all(uploadPromises);
 
       // calculate metered usage
-      // const usageRes = await stripe.subscriptionItems.createUsageRecord(
-      //   userSubscription.subscriptionItemId,
-      //   {
-      //     quantity: Math.round(totalFileSize / 1024),
-      //     timestamp: "now",
-      //   }
-      // );
-      // console.log(usageRes);
+      const usageRes = await stripe.subscriptionItems.createUsageRecord(
+        userSubscription.subscriptionItemId,
+        {
+          quantity: Math.round(totalFileSize / 1024),
+          timestamp: "now",
+        }
+      );
+      console.log(usageRes);
       // Update folder totalSize
       if (folderExist && folderExist.userId === userId) {
         folderExist.totalSize += totalFileSize;
